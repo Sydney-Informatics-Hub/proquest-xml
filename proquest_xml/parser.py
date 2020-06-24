@@ -21,7 +21,8 @@ class ProquestXml:
         # xmltodict has issues with the encoding of the XML files
         #   so run through ElementTree first
         tree = ElementTree.parse(filename)
-        tree_string = ElementTree.tostring(tree.getroot(), encoding='utf-8', method='xml')
+        tree_string = ElementTree.tostring(tree.getroot(), encoding='utf-8',
+                                           method='xml')
         xml_dict = xmltodict.parse(tree_string)
         # Don't think we need the top-level 'RECORD' node
         self._dict = xml_dict['RECORD']
@@ -101,7 +102,7 @@ class ProquestXml:
         """
         return self.get('Obj/TitleAtt/Title')
 
-    def to_record(self, extra_fields: Dict[str, str]=None):
+    def to_record(self, extra_fields: Dict[str, str]=None) -> Dict:
         """
         Get the most important information about the article
         and return it as a flat dictionary.
