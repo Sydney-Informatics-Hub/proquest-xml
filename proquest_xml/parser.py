@@ -21,7 +21,8 @@ class ProquestXml:
         # xmltodict has issues with the encoding of the XML files
         #   so run through ElementTree first
         tree = ElementTree.parse(filename)
-        tree_string = ElementTree.tostring(tree.getroot(), encoding='utf-8', method='xml')
+        tree_string = ElementTree.tostring(tree.getroot(), encoding='utf-8',
+                                           method='xml')
         xml_dict = xmltodict.parse(tree_string)
         # Don't think we need the top-level 'RECORD' node
         self._dict = xml_dict['RECORD']
@@ -81,19 +82,49 @@ class ProquestXml:
         else:
             return text
 
-    # TODO: How to deal with multiple authors? Don't think I've seen examples
-    #   in the sample data so far
-    def get_author(self):
+    def get_terms(self):
+        """
+        Get the GenSubjTerm's from the document
+        """
+        def _get_term(term_entry):
+            return term_entry['GenSubjValue']
+
+        term_info = self.get('Obj/Terms/GenSubjTerm')
+        if term_info is None:
+            return None
+        elif isinstance(term_info, list):
+           terms = [_get_term(entry) for entry in term_info]
+        else:
+            terms = [_get_term(term_info)]
+        return terms
+
+    def get_authors(self) -> List[Dict[str, str]]:
         """
         Get the author information for the article
+
+        :returns: List of dictionaries with author first name and last name,
+           in contribution order.
         """
-        author = self.get('Obj/Contributors/Contributor/Author')
-        return {
-            'last_name': dpath.util.get(author, 'LastNameAtt/LastName',
-                                        default=None),
-            'first_name': dpath.util.get(author, 'FirstNameAtt/FirstName',
-                                         default=None)
-        }
+        def _extract_info(author_entry):
+            fields = {
+                'order': '@ContribOrder',
+                'last_name': 'Author/LastNameAtt/LastName',
+                'first_name': 'Author/FirstNameAtt/FirstName',
+                # Not all entries have last/first name recorded,
+                # may have to extract full name
+                'full_name': 'Author/OriginalFormAtt/OriginalForm'
+            }
+            return {field: dpath.util.get(author_entry, path, default=None)
+                    for field, path in fields.items()}
+
+        contributors = self.get('Obj/Contributors/Contributor')
+        # Multiple authors
+        if isinstance(contributors, list):
+            authors = [_extract_info(author) for author in contributors]
+            authors.sort(key=lambda x: int(x['order']))
+        else:
+            authors = [_extract_info(contributors)]
+        return authors
 
     def get_article_title(self):
         """
@@ -101,7 +132,7 @@ class ProquestXml:
         """
         return self.get('Obj/TitleAtt/Title')
 
-    def to_record(self, extra_fields: Dict[str, str]=None):
+    def to_record(self, extra_fields: Dict[str, str]=None) -> Dict:
         """
         Get the most important information about the article
         and return it as a flat dictionary.
@@ -109,7 +140,7 @@ class ProquestXml:
         extra_fields (dict): A {field_name: dict_path} dictionary
           of extra fields you want to add to the record.
         """
-        author = self.get_author()
+        first_author, *other_authors = self.get_authors()
         record = {
             'id': self.id,
             'title': self.get_article_title(),
@@ -118,15 +149,20 @@ class ProquestXml:
                 format='%Y-%m-%d'
             ),
             'publication': self.get('/DFS/PubFrosting/Title'),
-            'author_last_name': author['last_name'],
-            'author_first_name': author['first_name'],
+            'author1_last_name': first_author['last_name'],
+            'author1_first_name': first_author['first_name'],
+            'author1_full_name': first_author['full_name'],
+            'other_authors': other_authors,
             'article_type': self.get('/Obj/ObjectTypes/mstar'),
             'text': self.get_text()
         }
 
         if extra_fields is not None:
-            for field_name, path in extra_fields.items():
-                record[field_name] = self.get(path)
+            for field_name, field_getter in extra_fields.items():
+                if isinstance(field_getter, str):
+                    record[field_name] = self.get(field_getter)
+                elif callable(field_getter):
+                    record[field_name] = field_getter(self)
 
         return record
 
