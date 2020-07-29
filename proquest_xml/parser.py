@@ -63,6 +63,26 @@ class ProquestXml:
         """
         return dpath.util.search(self._dict, path)
 
+    def search_all_keys(self, text):
+        """
+        Search the entire tree of keys for a matching
+        string. e.g. 'title' -> DFS/PubFrosting/*Title*
+        """
+        def _get_keys(dct, context=''):
+            for key, val in dct.items():
+                key_path = context + '/' + key
+                yield key_path
+                if isinstance(val, dict):
+                    for sub_key in _get_keys(val, context=key_path):
+                        yield sub_key
+
+        results = []
+        for key in _get_keys(self._dict):
+            last = key.split('/')[-1]
+            if text.lower() in last.lower():
+                results.append(key)
+        return results
+
     def get_dict(self):
         """
         Get the XML data as a dictionary.
