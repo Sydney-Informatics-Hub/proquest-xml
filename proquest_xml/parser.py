@@ -1,6 +1,6 @@
 """Tools for reading/parsing ProQuest XML documents."""
 import copy
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple, Optional, Union, Callable
 from xml.etree import ElementTree
 
 import pandas
@@ -98,14 +98,14 @@ class ProquestXml:
             terms = [_get_term(term_info)]
         return terms
 
-    def get_authors(self) -> List[Dict[str, str]]:
+    def get_authors(self) -> List[Dict[str, Union[str, None]]]:
         """
         Get the author information for the article
 
         :returns: List of dictionaries with author first name and last name,
            in contribution order.
         """
-        def _extract_info(author_entry):
+        def _extract_info(author_entry) -> Dict[str, Union[str, None]]:
             fields = {
                 'order': '@ContribOrder',
                 'last_name': 'Author/LastNameAtt/LastName',
@@ -132,13 +132,15 @@ class ProquestXml:
         """
         return self.get('Obj/TitleAtt/Title')
 
-    def to_record(self, extra_fields: Dict[str, str]=None) -> Dict:
+    def to_record(self, extra_fields: Dict[str, Union[str, Callable]]=None) -> Dict:
         """
         Get the most important information about the article
         and return it as a flat dictionary.
 
-        extra_fields (dict): A {field_name: dict_path} dictionary
-          of extra fields you want to add to the record.
+        extra_fields (dict): A dictionary of extra fields you want to add to the record.
+            keys are the name of the column to create. 
+            Values are either a string representing the path to the value, 
+            or a function that when called on the document will return the desired value.
         """
         first_author, *other_authors = self.get_authors()
         record = {
