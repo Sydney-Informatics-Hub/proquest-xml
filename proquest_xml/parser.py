@@ -1,6 +1,6 @@
 """Tools for reading/parsing ProQuest XML documents."""
 import copy
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple, Optional, Union, Callable
 from xml.etree import ElementTree
 
 import pandas
@@ -63,6 +63,26 @@ class ProquestXml:
         """
         return dpath.util.search(self._dict, path)
 
+    def search_all_keys(self, text):
+        """
+        Search the entire tree of keys for a matching
+        string. e.g. 'title' -> DFS/PubFrosting/*Title*
+        """
+        def _get_keys(dct, context=''):
+            for key, val in dct.items():
+                key_path = context + '/' + key
+                yield key_path
+                if isinstance(val, dict):
+                    for sub_key in _get_keys(val, context=key_path):
+                        yield sub_key
+
+        results = []
+        for key in _get_keys(self._dict):
+            last = key.split('/')[-1]
+            if text.lower() in last.lower():
+                results.append(key)
+        return results
+
     def get_dict(self):
         """
         Get the XML data as a dictionary.
@@ -98,14 +118,14 @@ class ProquestXml:
             terms = [_get_term(term_info)]
         return terms
 
-    def get_authors(self) -> List[Dict[str, str]]:
+    def get_authors(self) -> List[Dict[str, Union[str, None]]]:
         """
         Get the author information for the article
 
         :returns: List of dictionaries with author first name and last name,
            in contribution order.
         """
-        def _extract_info(author_entry):
+        def _extract_info(author_entry) -> Dict[str, Union[str, None]]:
             fields = {
                 'order': '@ContribOrder',
                 'last_name': 'Author/LastNameAtt/LastName',
@@ -132,13 +152,15 @@ class ProquestXml:
         """
         return self.get('Obj/TitleAtt/Title')
 
-    def to_record(self, extra_fields: Dict[str, str]=None) -> Dict:
+    def to_record(self, extra_fields: Dict[str, Union[str, Callable]]=None) -> Dict:
         """
         Get the most important information about the article
         and return it as a flat dictionary.
 
-        extra_fields (dict): A {field_name: dict_path} dictionary
-          of extra fields you want to add to the record.
+        extra_fields (dict): A dictionary of extra fields you want to add to the record.
+            keys are the name of the column to create. 
+            Values are either a string representing the path to the value, 
+            or a function that when called on the document will return the desired value.
         """
         first_author, *other_authors = self.get_authors()
         record = {
