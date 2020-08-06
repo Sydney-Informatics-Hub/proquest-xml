@@ -1,11 +1,11 @@
 """Tools for reading/parsing ProQuest XML documents."""
 import copy
-from typing import List, Set, Dict, Tuple, Optional, Union, Callable
+from typing import List, Dict, Union, Callable
 from xml.etree import ElementTree
 
+import dpath.util
 import pandas
 import xmltodict
-import dpath.util
 from bs4 import BeautifulSoup
 
 
@@ -28,12 +28,18 @@ class ProquestXml:
         self._dict = xml_dict['RECORD']
         self.id = self['GOID']
 
+    def __str__(self):
+        return "ProquestXml(id={doc_id}, title='{title}')".format(
+            doc_id=self.id,
+            title=self.get_article_title()[:15] + '...'
+        )
+
     def __getitem__(self, y):
         return self._dict[y]
 
-    def show_all_keys(self):
+    def show_all_tags(self):
         """
-        Print all the keys in the data, indenting keys at lower levels
+        Print all the tags in the data, indenting tags at lower levels
         to show the structure of the tree.
         """
 
@@ -41,15 +47,16 @@ class ProquestXml:
             for key, val in dct.items():
                 print(context + key)
                 if isinstance(val, dict):
+                    new_context = (len(context) * ' ') + '└─'
                     _show(val,
-                          context=context + '  ')
+                          context=new_context)
 
         _show(self._dict)
 
     def get(self, path: str, default=None):
         """
         Get an item from the nested dictionary using a path like
-        '/key1/key2/name'.
+        '/tag1/tag2/name'.
 
         path (str): Location of the item
         """
@@ -63,17 +70,18 @@ class ProquestXml:
         """
         return dpath.util.search(self._dict, path)
 
-    def search_all_keys(self, text):
+    def search_all_tags(self, text):
         """
-        Search the entire tree of keys for a matching
-        string. e.g. 'title' -> DFS/PubFrosting/*Title*
+        Search the entire tree of tags for a matching
+        string. e.g. 'title' -> DFS/PubFrosting/Title.
+        Not case sensitive.
         """
         def _get_keys(dct, context=''):
-            for key, val in dct.items():
-                key_path = context + '/' + key
+            for k, v in dct.items():
+                key_path = context + '/' + k
                 yield key_path
-                if isinstance(val, dict):
-                    for sub_key in _get_keys(val, context=key_path):
+                if isinstance(v, dict):
+                    for sub_key in _get_keys(v, context=key_path):
                         yield sub_key
 
         results = []
@@ -89,7 +97,7 @@ class ProquestXml:
         """
         return copy.deepcopy(self._dict)
 
-    def get_text(self, clean_html: bool=True):
+    def get_text(self, clean_html: bool = True):
         """
         Get the main article text, removing HTML tags if necessary.
         """
@@ -113,7 +121,7 @@ class ProquestXml:
         if term_info is None:
             return None
         elif isinstance(term_info, list):
-           terms = [_get_term(entry) for entry in term_info]
+            terms = [_get_term(entry) for entry in term_info]
         else:
             terms = [_get_term(term_info)]
         return terms
@@ -152,7 +160,8 @@ class ProquestXml:
         """
         return self.get('Obj/TitleAtt/Title')
 
-    def to_record(self, extra_fields: Dict[str, Union[str, Callable]]=None) -> Dict:
+    def to_record(self,
+                  extra_fields: Dict[str, Union[str, Callable]] = None) -> Dict:
         """
         Get the most important information about the article
         and return it as a flat dictionary.
