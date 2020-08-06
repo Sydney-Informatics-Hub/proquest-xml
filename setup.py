@@ -40,7 +40,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/mmat6620/proquest_xml',
+    url='https://github.com/Sydney-Informatics-Hub/proquest-xml',
     version='0.1.0',
     zip_safe=False,
 )
