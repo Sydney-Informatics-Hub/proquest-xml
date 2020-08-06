@@ -1,11 +1,11 @@
 """Tools for reading/parsing ProQuest XML documents."""
 import copy
-from typing import List, Set, Dict, Tuple, Optional, Union, Callable
+from typing import List, Dict, Union, Callable
 from xml.etree import ElementTree
 
+import dpath.util
 import pandas
 import xmltodict
-import dpath.util
 from bs4 import BeautifulSoup
 
 
@@ -77,11 +77,11 @@ class ProquestXml:
         Not case sensitive.
         """
         def _get_keys(dct, context=''):
-            for key, val in dct.items():
-                key_path = context + '/' + key
+            for k, v in dct.items():
+                key_path = context + '/' + k
                 yield key_path
-                if isinstance(val, dict):
-                    for sub_key in _get_keys(val, context=key_path):
+                if isinstance(v, dict):
+                    for sub_key in _get_keys(v, context=key_path):
                         yield sub_key
 
         results = []
@@ -97,7 +97,7 @@ class ProquestXml:
         """
         return copy.deepcopy(self._dict)
 
-    def get_text(self, clean_html: bool=True):
+    def get_text(self, clean_html: bool = True):
         """
         Get the main article text, removing HTML tags if necessary.
         """
@@ -121,7 +121,7 @@ class ProquestXml:
         if term_info is None:
             return None
         elif isinstance(term_info, list):
-           terms = [_get_term(entry) for entry in term_info]
+            terms = [_get_term(entry) for entry in term_info]
         else:
             terms = [_get_term(term_info)]
         return terms
@@ -160,7 +160,8 @@ class ProquestXml:
         """
         return self.get('Obj/TitleAtt/Title')
 
-    def to_record(self, extra_fields: Dict[str, Union[str, Callable]]=None) -> Dict:
+    def to_record(self,
+                  extra_fields: Dict[str, Union[str, Callable]] = None) -> Dict:
         """
         Get the most important information about the article
         and return it as a flat dictionary.
