@@ -28,6 +28,12 @@ class ProquestXml:
         self._dict = xml_dict['RECORD']
         self.id = self['GOID']
 
+    def __str__(self):
+        return "ProquestXml(id={doc_id}, title='{title}')".format(
+            doc_id=self.id,
+            title=self.get_article_title()[:15] + '...'
+        )
+
     def __getitem__(self, y):
         return self._dict[y]
 
