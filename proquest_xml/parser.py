@@ -37,9 +37,9 @@ class ProquestXml:
     def __getitem__(self, y):
         return self._dict[y]
 
-    def show_all_keys(self):
+    def show_all_tags(self):
         """
-        Print all the keys in the data, indenting keys at lower levels
+        Print all the tags in the data, indenting tags at lower levels
         to show the structure of the tree.
         """
 
@@ -47,15 +47,16 @@ class ProquestXml:
             for key, val in dct.items():
                 print(context + key)
                 if isinstance(val, dict):
+                    new_context = (len(context) * ' ') + '└─'
                     _show(val,
-                          context=context + '  ')
+                          context=new_context)
 
         _show(self._dict)
 
     def get(self, path: str, default=None):
         """
         Get an item from the nested dictionary using a path like
-        '/key1/key2/name'.
+        '/tag1/tag2/name'.
 
         path (str): Location of the item
         """
@@ -69,10 +70,11 @@ class ProquestXml:
         """
         return dpath.util.search(self._dict, path)
 
-    def search_all_keys(self, text):
+    def search_all_tags(self, text):
         """
-        Search the entire tree of keys for a matching
-        string. e.g. 'title' -> DFS/PubFrosting/*Title*
+        Search the entire tree of tags for a matching
+        string. e.g. 'title' -> DFS/PubFrosting/Title.
+        Not case sensitive.
         """
         def _get_keys(dct, context=''):
             for key, val in dct.items():
