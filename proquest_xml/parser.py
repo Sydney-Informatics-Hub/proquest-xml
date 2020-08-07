@@ -70,25 +70,45 @@ class ProquestXml:
         """
         return dpath.util.search(self._dict, path)
 
+    @classmethod
+    def _generate_keys(cls, dct, context=''):
+        """
+        Iterate through all keys at all levels of the nested
+        structure, returning a generator that yields the keys
+        """
+        for k, v in dct.items():
+            key_path = context + '/' + k
+            yield key_path
+            if isinstance(v, dict):
+                for sub_key in cls._generate_keys(v, context=key_path):
+                    yield sub_key
+
     def search_all_tags(self, text):
         """
         Search the entire tree of tags for a matching
         string. e.g. 'title' -> DFS/PubFrosting/Title.
         Not case sensitive.
         """
-        def _get_keys(dct, context=''):
-            for k, v in dct.items():
-                key_path = context + '/' + k
-                yield key_path
-                if isinstance(v, dict):
-                    for sub_key in _get_keys(v, context=key_path):
-                        yield sub_key
-
         results = []
-        for key in _get_keys(self._dict):
+        for key in self._generate_keys(self._dict):
             last = key.split('/')[-1]
             if text.lower() in last.lower():
                 results.append(key)
+        return results
+
+    def search_all_values(self, text):
+        results = []
+        for key in self._generate_keys(self._dict):
+            val = self.get(key)
+            if isinstance(val, str):
+                if text in val.lower():
+                    results.append((key, val))
+            elif isinstance(val, list) or isinstance(val, tuple):
+                for item in val:
+                    if isinstance(item, str):
+                        if text in item.lower():
+                            results.append((key, val))
+                            break
         return results
 
     def get_dict(self):
