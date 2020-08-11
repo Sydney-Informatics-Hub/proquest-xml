@@ -180,16 +180,19 @@ class ProquestXml:
         """
         return self.get('Obj/TitleAtt/Title')
 
-    def to_record(self,
-                  extra_fields: Dict[str, Union[str, Callable]] = None) -> Dict:
+    def to_record(
+            self,
+            extra_fields: Dict[str, Union[str, Callable]] = None) -> Dict:
         """
         Get the most important information about the article
         and return it as a flat dictionary.
 
-        extra_fields (dict): A dictionary of extra fields you want to add to the record.
-            keys are the name of the column to create. 
-            Values are either a string representing the path to the value, 
-            or a function that when called on the document will return the desired value.
+        extra_fields (dict): A dictionary of extra fields you want to
+            add to the record.
+            keys are the name of the column to create.
+            Values are either a string representing the path to the value,
+            or a function that when called on the document will return the
+            desired value.
         """
         first_author, *other_authors = self.get_authors()
         record = {

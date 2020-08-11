@@ -5,3 +5,5 @@ __email__ = 'marius.mather@sydney.edu.au'
 __version__ = '0.1.1'
 
 from .parser import ProquestXml, create_dataframe
+
+__all__ = ['ProquestXml', 'create_dataframe']
