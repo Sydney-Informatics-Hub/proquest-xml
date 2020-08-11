@@ -2,6 +2,6 @@
 
 __author__ = """Marius Mather"""
 __email__ = 'marius.mather@sydney.edu.au'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 from .parser import ProquestXml, create_dataframe
