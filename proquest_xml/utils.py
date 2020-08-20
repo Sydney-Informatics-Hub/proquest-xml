@@ -35,4 +35,5 @@ def get_text_from_html(html_text: str):
     _break_up_block_elements(body)
     text = body.get_text(separator=' ')
     # Remove additional newlines
-    return re.sub('\n( ?\n)+', '\n\n', text)
+    text = re.sub('\n( ?\n)+', '\n\n', text)
+    return '\n'.join(s.strip() for s in text.splitlines())
