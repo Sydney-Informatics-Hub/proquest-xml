@@ -8,6 +8,8 @@ import pandas
 import xmltodict
 from bs4 import BeautifulSoup
 
+from .utils import get_text_from_html
+
 
 class ProquestXml:
     """
@@ -125,8 +127,7 @@ class ProquestXml:
         text = self.get('TextInfo/Text/#text')
 
         if clean_html and is_html:
-            soup = BeautifulSoup(text, "lxml")
-            return soup.body.get_text()
+            return get_text_from_html(text)
         else:
             return text
 
