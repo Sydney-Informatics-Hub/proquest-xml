@@ -48,9 +48,9 @@ def filter_company_reports(docs):
     consisting of ProquestXml objects
     """
     filtered_dictionary = dict()
-    for key, value in docs.items():
+    for id, value in docs.items():
         if value.get('DFS/PubFrosting/Title') != 'Company Data Report': 
-            filtered_dictionary[key] = value
+            filtered_dictionary[id] = value
     return filtered_dictionary
 
 
