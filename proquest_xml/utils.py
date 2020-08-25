@@ -68,7 +68,7 @@ def enter_query():
     return word_list[0]
 
 
-def concordance_dataframe(dataframe, words):
+def concordance_dataframe(df, word_list):
     """
     Concordance function that uses nltk's concordance_line.
     Requires a dataframe as input (e.g. from create_dataframe)
@@ -83,8 +83,6 @@ def concordance_dataframe(dataframe, words):
     
     """
     
-    df = dataframe
-    word_list = words
     df['tokenised_text'] = df['text'].map(nltk.word_tokenize)
     df['text_object'] = df['tokenised_text'].map(nltk.Text)
     
